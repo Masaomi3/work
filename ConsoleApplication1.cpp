@@ -30,12 +30,12 @@ inline double sigmod(double x)
 
 inline double finitlization(double x)
 {
-	return atan(x/100) / pi + 0.5;
+	return atan(x) / pi + 0.5;
 }
 
 inline double infinitlization(double x)
 {
-	return 100*tan((x - 0.5) * pi);
+	return tan((x - 0.5) * pi);
 }
 
 class node
@@ -165,6 +165,16 @@ double prediction_finitlized(double x)
 	return result_;
 }
 
+double loss()
+{
+	double total_loss = 0;
+	for (int i = 0; i < data_number; i++)
+	{
+		total_loss += pow(infinitlization(prediction_finitlized(training_data[i])) - target_data[i], 2);
+	}
+	return total_loss / (2 * data_number);
+}
+
 void fit(double rate,double lambda = 0)/////////////////////
 {
 	
@@ -225,7 +235,7 @@ void fit(double rate,double lambda = 0)/////////////////////
 		}
 
 		p = neural_network;
-		while (p->next != NULL) p = p->next;////useful?
+		while (p->next != NULL) p = p->next;
 		double result = history[dense_num - 1][0];
 		dJ_dz_on_x[dense_num - 1][0] = (result - finitlization(target_data[i])) * (result - result * result);
 		p = p->last;
@@ -233,7 +243,7 @@ void fit(double rate,double lambda = 0)/////////////////////
 		{
 			for (int m = 0; m < p->node_num; m++)
 			{
-				for (int k = 0; k < p->next->node_num; k++)  dJ_dz_on_x[l][m] += dJ_dz_on_x[l + 1][k] * p->next->W[k].w[m]*(history[l+1][k]-history[l+1][k]*history[l+1][k]);
+				for (int k = 0; k < p->next->node_num; k++)  dJ_dz_on_x[l][m] += dJ_dz_on_x[l + 1][k] * p->next->W[k].w[m] * (history[l][m] - history[l][m] * history[l][m]);
 			}
 			p = p->last;
 		}
@@ -282,7 +292,7 @@ void fit(double rate,double lambda = 0)/////////////////////
 				dJ_dw[i][j][k] /= data_number;
 				p->W[j].w[k] -= rate * dJ_dw[i][j][k];
 			}
-			dJ_db[i][j] += p->W[j].b * lambda;
+			//dJ_db[i][j] += p->W[j].b * lambda;
 			dJ_db[i][j] /= data_number;
 			p->W[j].b -= rate*dJ_db[i][j];
 		}
@@ -350,7 +360,7 @@ int main()
 
 ////////////////////////////////creating network//////////////////////////////////
 	int dense_num_;
-	cout << "do you want to create network manually or automatically(100 nodes/dense)?" << endl;
+	cout << "do you want to create network manually or automatically(20 nodes/dense)?" << endl;
 	cout << "( m : maually | a : automatically ) : ";
 	char c; cin >> c;
 	cout << "how many denses do you want?(num > 0):" << endl;
@@ -370,7 +380,7 @@ int main()
 	{
 		for (int i = 0; i < dense_num_; i++)
 		{
-			insert(100);
+			insert(20);
 			cout << "dense " << i + 1 << " inserted" << '\r';
 			cout.flush();
 		}
@@ -398,7 +408,8 @@ int main()
 	for (int i = 0; i < epoch; i++)
 	{
 		fit(rate, lambda);
-		cout << '\r' << "epoch " << i + 1 << " finished";
+		cout << "epoch " << i + 1 << " finished,";
+		cout << "loss = " << loss() << endl;
 		cout.flush();
 	}
 	cout << endl;
@@ -419,7 +430,7 @@ int main()
 		test[i] = dis(gen);
 		target[i] = func(test[i]);
 		predict[i] = infinitlization(prediction_finitlized(test[i]));
-		cout << "test " << i << " :" << endl << "    test data : " << test[i] << endl << "    prediction : " << predict[i] << endl;
+		cout << "test " << i + 1 << " :" << endl << "    test data : " << test[i] << endl << "    prediction : " << predict[i] << endl;
 		cout << "    target : " << target[i] << endl << "    deviation:" << predict[i] - target[i] << endl;
 	}
 
